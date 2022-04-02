@@ -9,6 +9,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 import sys
 sys.path.insert(0, './yolov5')
 
+import copy
 import argparse
 import os
 import platform
@@ -100,6 +101,9 @@ def detect(opt):
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt and not jit)
         bs = len(dataset)  # batch_size
+        if bs > 1:
+            deepsort_list = [copy.deepcopy(deepsort) for i in range(bs)]
+            del deepsort
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt and not jit)
         bs = 1  # batch_size
@@ -141,6 +145,8 @@ def detect(opt):
             if webcam:  # batch_size >= 1
                 p, im0, _ = path[i], im0s[i].copy(), dataset.count
                 s += f'{i}: '
+                if bs > 1:
+                    deepsort = deepsort_list[i]
             else:
                 p, im0, _ = path, im0s.copy(), getattr(dataset, 'frame', 0)
 

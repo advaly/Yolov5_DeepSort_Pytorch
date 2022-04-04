@@ -147,6 +147,7 @@ def detect(opt):
                 if bs > 1:
                     deepsort = deepsort_list[i]
                 save_path = str(save_dir / f"stream-{i}.mp4")
+                txt_path = str(save_dir / f"stream-{i}.txt")
             else:
                 p, im0, _ = Path(path), im0s.copy(), getattr(dataset, 'frame', 0)
                 save_path = str(save_dir / p.name)  # im.jpg, vid.mp4, ...

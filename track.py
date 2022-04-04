@@ -97,7 +97,6 @@ def detect(opt):
 
     # Dataloader
     if webcam:
-        show_vid = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt and not jit)
         bs = len(dataset)  # batch_size
@@ -143,15 +142,15 @@ def detect(opt):
         for i, det in enumerate(pred):  # detections per image
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0, _ = path[i], im0s[i].copy(), dataset.count
+                p, im0, _ = Path(path[i]), im0s[i].copy(), dataset.count
                 s += f'{i}: '
                 if bs > 1:
                     deepsort = deepsort_list[i]
+                save_path = str(save_dir / f"stream-{i}.mp4")
             else:
-                p, im0, _ = path, im0s.copy(), getattr(dataset, 'frame', 0)
+                p, im0, _ = Path(path), im0s.copy(), getattr(dataset, 'frame', 0)
+                save_path = str(save_dir / p.name)  # im.jpg, vid.mp4, ...
 
-            p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg, vid.mp4, ...
             s += '%gx%g ' % img.shape[2:]  # print string
 
             annotator = Annotator(im0, line_width=2, pil=not ascii)
@@ -214,19 +213,18 @@ def detect(opt):
 
             # Save results (image with detections)
             if save_vid:
-                if vid_path != save_path:  # new video
-                    vid_path = save_path
-                    if isinstance(vid_writer, cv2.VideoWriter):
-                        vid_writer.release()  # release previous video writer
+                if vid_path[i] != save_path:  # new video
+                    vid_path[i] = save_path
+                    if isinstance(vid_writer[i], cv2.VideoWriter):
+                        vid_writer[i].release()  # release previous video writer
                     if vid_cap:  # video
                         fps = vid_cap.get(cv2.CAP_PROP_FPS)
                         w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                     else:  # stream
                         fps, w, h = 30, im0.shape[1], im0.shape[0]
-
-                    vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                vid_writer.write(im0)
+                    vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                vid_writer[i].write(im0)
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
